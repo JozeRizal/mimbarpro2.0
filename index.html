@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mimbar Pro - Asisten Dakwah Digital</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: 'Noto Sans', sans-serif; }
+        .font-serif { font-family: 'Noto Serif', serif; }
+        .font-arabic { font-family: 'Amiri', serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f5f5f4; }
+        ::-webkit-scrollbar-thumb { background: #064e3b; border-radius: 4px; }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+        .print-only { display: none; }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-900">
+
+    <!-- HEADER -->
+    <header class="bg-emerald-900 border-b border-emerald-800 sticky top-0 z-30 shadow-md no-print">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-emerald-800 border border-emerald-700 text-amber-400 p-2 rounded-lg shadow-inner">
+                    <i data-lucide="moon" class="w-5 h-5 fill-current"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-white">
+                    Mimbar<span class="text-amber-400">Pro</span>
+                    <span class="text-[10px] font-normal text-emerald-100 bg-emerald-800/50 border border-emerald-700 px-2 py-0.5 rounded-full ml-2 uppercase tracking-wider">Ramadhan</span>
+                </h1>
+            </div>
+            <div class="hidden md:flex items-center gap-2 text-emerald-200/60 text-xs font-mono">
+                <span>AI Powered by Gemini 2.5</span>
+            </div>
+        </div>
+    </header>
+
+    <main id="app-container" class="max-w-5xl mx-auto px-4 py-8 relative no-print">
+        <!-- STEP: INPUT -->
+        <section id="step-input" class="max-w-2xl mx-auto space-y-6 animate-fade-in">
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-stone-200 overflow-hidden relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600"></div>
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-emerald-900 font-serif">Studio Naskah</h2>
+                    <p class="text-stone-500 mt-2">Racik materi dakwah mendalam dengan kecerdasan buatan.</p>
+                </div>
+
+                <div id="error-box" class="hidden bg-red-50 text-red-700 border border-red-100 p-4 rounded-xl flex items-start gap-3 text-sm font-medium mb-6">
+                    <i data-lucide="alert-circle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+                    <p id="error-message"></p>
+                </div>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide">Topik Kajian</label>
+                        <input id="input-topic" type="text" value="Keutamaan Menjaga Lisan" class="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
+                        <select id="select-preset" class="mt-2 w-full p-2 bg-stone-100 text-sm rounded border border-stone-200 outline-none text-stone-600">
+                            <option value="">...pilih inspirasi topik Ramadhan</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide">Audiens</label>
+                            <select id="input-audience" class="w-full p-3 border border-stone-300 rounded-lg bg-white outline-none">
+                                <option>Umum</option>
+                                <option>Anak Muda / Milenial</option>
+                                <option>Bapak-bapak</option>
+                                <option>Ibu-ibu Pengajian</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide">Durasi</label>
+                            <select id="input-duration" class="w-full p-3 border border-stone-300 rounded-lg bg-white outline-none">
+                                <option>3 Menit</option>
+                                <option>5 Menit</option>
+                                <option>7 Menit</option>
+                                <option>15 Menit</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide">Tone</label>
+                        <div id="tone-options" class="grid grid-cols-2 gap-2">
+                            <button data-tone="Santai" class="p-2 text-sm rounded border bg-emerald-800 text-white border-emerald-800">Santai</button>
+                            <button data-tone="Tegas" class="p-2 text-sm rounded border bg-white border-stone-200 hover:bg-emerald-50">Tegas</button>
+                            <button data-tone="Menyentuh" class="p-2 text-sm rounded border bg-white border-stone-200 hover:bg-emerald-50">Menyentuh</button>
+                            <button data-tone="Semangat" class="p-2 text-sm rounded border bg-white border-stone-200 hover:bg-emerald-50">Semangat</button>
+                        </div>
+                    </div>
+
+                    <button id="btn-generate" class="w-full py-4 font-bold rounded-xl shadow-lg bg-gradient-to-r from-emerald-700 to-emerald-900 text-white hover:from-emerald-800 hover:to-emerald-950 transition transform active:scale-[0.98] flex justify-center items-center gap-2 mt-2">
+                        <i data-lucide="wand2" class="w-5 h-5 text-amber-400"></i> Buat Naskah Sekarang
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP: LOADING -->
+        <section id="step-loading" class="hidden h-96 flex flex-col items-center justify-center text-center">
+            <i data-lucide="loader-2" class="w-12 h-12 text-emerald-600 animate-spin mb-4"></i>
+            <p class="text-emerald-900 font-bold text-lg">Sedang Meracik Naskah...</p>
+            <p class="text-stone-500 text-sm">Menyusun dalil dan narasi dakwah...</p>
+        </section>
+
+        <!-- STEP: RESULT -->
+        <section id="step-result" class="hidden flex flex-col h-[calc(100vh-140px)] border border-stone-300 rounded-2xl shadow-2xl overflow-hidden bg-white animate-fade-in">
+            <div class="bg-emerald-950 text-stone-300 p-4 flex items-center justify-between z-10 border-b border-emerald-900">
+                <div class="flex items-center gap-4">
+                    <button id="btn-reset" class="flex items-center gap-2 hover:text-white transition text-sm font-medium">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> <span class="hidden md:inline">Reset</span>
+                    </button>
+                    <div class="h-6 w-px bg-emerald-800"></div>
+                    <div class="flex items-center gap-1 bg-emerald-900/50 rounded-lg p-1 border border-emerald-800">
+                        <button id="btn-font-dec" class="p-1 hover:bg-emerald-800 rounded text-white"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+                        <span id="font-size-display" class="text-xs font-mono w-6 text-center text-amber-400">24</span>
+                        <button id="btn-font-inc" class="p-1 hover:bg-emerald-800 rounded text-white"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btn-preview-pdf" class="flex items-center gap-2 px-3 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-white rounded-lg border border-emerald-700 shadow-sm transition">
+                        <i data-lucide="file-down" class="w-4 h-4 text-amber-400"></i>
+                        <span class="text-xs font-bold uppercase tracking-wide hidden md:inline">Download PDF</span>
+                    </button>
+                    <div class="w-px h-6 bg-emerald-800"></div>
+                    <div class="flex items-center gap-2">
+                        <input id="scroll-speed" type="range" min="0" max="5" step="1" value="0" class="w-16 md:w-20 h-1.5 bg-emerald-700 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                        <button id="btn-play" class="p-2 rounded-full shadow-lg bg-emerald-600 text-white">
+                            <i data-lucide="play" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="scroll-area" class="flex-1 bg-[#FDFBF7] relative overflow-y-auto p-6 md:p-12 scroll-smooth">
+                <div id="script-render-target"></div>
+                <div id="on-air" class="hidden fixed bottom-8 right-8 bg-red-600 text-white px-4 py-2 rounded-full shadow-lg animate-pulse z-20 font-bold text-xs flex gap-2 items-center">
+                    <div class="w-2 h-2 bg-white rounded-full animate-ping"></div> ON AIR
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- OVERLAY DOWNLOAD PDF -->
+    <div id="pdf-overlay" class="hidden fixed inset-0 z-[9999] bg-stone-800/95 flex justify-center overflow-auto pt-4 pb-20">
+        <div class="text-white fixed top-4 left-4 z-50 animate-pulse font-bold flex gap-2 items-center bg-stone-900/50 px-4 py-2 rounded-full backdrop-blur-md">
+            <i data-lucide="loader-2" class="animate-spin"></i> Sedang Mencetak PDF...
+        </div>
+        <div id="final-print-area" class="bg-white w-[210mm] min-h-[297mm] shadow-2xl p-10 relative">
+            <div id="print-content-target"></div>
+        </div>
+    </div>
+
+    <!-- PREVIEW MODAL -->
+    <div id="preview-modal" class="hidden fixed inset-0 z-[50] bg-stone-800/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 overflow-y-auto">
+        <div class="bg-white w-full max-w-[210mm] min-h-[90vh] shadow-2xl rounded-sm flex flex-col relative">
+            <div class="bg-emerald-900 text-white p-4 flex justify-between items-center sticky top-0 z-10 shadow-md">
+                <div class="flex items-center gap-3"><i data-lucide="file-text" class="w-5 h-5 text-amber-400"></i><span class="font-bold text-sm">Pratinjau PDF</span></div>
+                <div class="flex gap-2">
+                    <button id="btn-close-preview" class="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 rounded-lg text-sm">Kembali</button>
+                    <button id="btn-confirm-download" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-emerald-950 rounded-lg font-bold">Download Sekarang</button>
+                </div>
+            </div>
+            <div class="bg-white flex-1 p-10 overflow-y-auto" id="preview-content-target"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI ---
+        const apiKey = ""; // Disediakan oleh runtime
+        const appId = "mimbar-pro-v1";
+
+        // --- STATE ---
+        let state = {
+            topic: 'Keutamaan Menjaga Lisan',
+            audience: 'Umum',
+            duration: '5 Menit',
+            tone: 'Santai',
+            script: [],
+            fontSize: 24,
+            scrollSpeed: 0,
+            isScrolling: false
+        };
+
+        const topics = [
+            "Keutamaan Bulan Ramadhan: Bulan Penuh Berkah", "Tujuan Utama Puasa: Meraih Derajat Taqwa",
+            "Tiga Tingkatan Puasa Menurut Imam Al-Ghazali", "Keutamaan Sahur: Berkah yang Sering Terlewatkan",
+            "Menjaga Lisan di Bulan Suci: Puasa Bicara", "Bahaya Ghibah: Memakan Daging Saudara Sendiri",
+            "Lailatul Qadar: Malam Lebih Baik dari Seribu Bulan"
+        ];
+
+        // --- DOM ELEMENTS ---
+        const inputTopic = document.getElementById('input-topic');
+        const selectPreset = document.getElementById('select-preset');
+        const inputAudience = document.getElementById('input-audience');
+        const inputDuration = document.getElementById('input-duration');
+        const btnGenerate = document.getElementById('btn-generate');
+        const fontSizeDisplay = document.getElementById('font-size-display');
+        const renderTarget = document.getElementById('script-render-target');
+        const scrollArea = document.getElementById('scroll-area');
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            lucide.createIcons();
+            topics.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t;
+                opt.textContent = t;
+                selectPreset.appendChild(opt);
+            });
+        };
+
+        // --- EVENTS ---
+        selectPreset.onchange = (e) => inputTopic.value = e.target.value;
+
+        document.querySelectorAll('#tone-options button').forEach(btn => {
+            btn.onclick = () => {
+                state.tone = btn.dataset.tone;
+                document.querySelectorAll('#tone-options button').forEach(b => b.className = "p-2 text-sm rounded border bg-white border-stone-200 hover:bg-emerald-50");
+                btn.className = "p-2 text-sm rounded border bg-emerald-800 text-white border-emerald-800";
+            };
+        });
+
+        btnGenerate.onclick = async () => {
+            state.topic = inputTopic.value;
+            state.audience = inputAudience.value;
+            state.duration = inputDuration.value;
+            await generateScript();
+        };
+
+        document.getElementById('btn-reset').onclick = () => showStep('input');
+        document.getElementById('btn-font-inc').onclick = () => updateFont(2);
+        document.getElementById('btn-font-dec').onclick = () => updateFont(-2);
+
+        document.getElementById('scroll-speed').oninput = (e) => {
+            state.scrollSpeed = parseInt(e.target.value);
+            state.isScrolling = state.scrollSpeed > 0;
+            updatePlayBtn();
+        };
+
+        document.getElementById('btn-play').onclick = () => {
+            state.isScrolling = !state.isScrolling;
+            updatePlayBtn();
+        };
+
+        document.getElementById('btn-preview-pdf').onclick = () => {
+            document.getElementById('preview-content-target').innerHTML = generateScriptHtml('print');
+            document.getElementById('preview-modal').classList.remove('hidden');
+        };
+
+        document.getElementById('btn-close-preview').onclick = () => document.getElementById('preview-modal').classList.add('hidden');
+
+        document.getElementById('btn-confirm-download').onclick = () => {
+            document.getElementById('preview-modal').classList.add('hidden');
+            document.getElementById('pdf-overlay').classList.remove('hidden');
+            document.getElementById('print-content-target').innerHTML = generateScriptHtml('print');
+            
+            const element = document.getElementById('final-print-area');
+            const opt = {
+                margin: 0,
+                filename: `Naskah_MimbarPro_${state.topic.substring(0,10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    document.getElementById('pdf-overlay').classList.add('hidden');
+                });
+            }, 1000);
+        };
+
+        // --- FUNCTIONS ---
+        function showStep(s) {
+            document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step-${s}`).classList.remove('hidden');
+        }
+
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return await response.json();
+                    if (response.status !== 429 && response.status < 500) {
+                        const err = await response.json();
+                        throw new Error(err.error?.message || "Error");
+                    }
+                } catch (e) { if (i === maxRetries - 1) throw e; }
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+        }
+
+        async function generateScript() {
+            showStep('loading');
+            const systemPrompt = `Anda adalah "MimbarPro" asisten pembuat naskah kultum Islami. Buat JSON Array: cues, opening, hook, meat, story, action, closing. JANGAN gunakan tanda bintang (*) untuk formatting. Tulis teks polos saja.`;
+            const userQuery = `Topik: ${state.topic}, Audience: ${state.audience}, Durasi: ${state.duration}, Tone: ${state.tone}`;
+
+            try {
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userQuery }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+
+                let raw = data.candidates[0].content.parts[0].text;
+                raw = raw.replace(/```json/g, '').replace(/```/g, '').replace(/\*/g, '').trim();
+                state.script = JSON.parse(raw);
+                renderScript();
+                showStep('result');
+            } catch (e) {
+                document.getElementById('error-box').classList.remove('hidden');
+                document.getElementById('error-message').textContent = e.message;
+                showStep('input');
+            }
+        }
+
+        function renderScript() {
+            renderTarget.innerHTML = generateScriptHtml('screen');
+        }
+
+        function generateScriptHtml(mode) {
+            const isPrint = mode === 'print';
+            const fSize = isPrint ? '12pt' : `${state.fontSize}px`;
+            
+            let html = `<div class="${isPrint ? 'text-black' : ''}">`;
+            
+            // Header for Print
+            if(isPrint) {
+                html += `<div class="text-center border-b-2 border-emerald-900 pb-4 mb-8">
+                    <h1 class="text-3xl font-bold font-serif text-emerald-900">Naskah Kultum Ramadhan</h1>
+                    <p class="text-sm text-stone-500 font-mono">${state.topic} • ${state.audience}</p>
+                </div>`;
+            }
+
+            state.script.forEach(block => {
+                html += `<div class="mb-8 ${isPrint ? 'page-break-inside-avoid' : ''}">`;
+                
+                if (block.content || block.cues) {
+                    html += `<div class="mb-4 bg-amber-50 border-l-4 border-amber-500 p-2 text-xs font-bold uppercase text-amber-800">💡 ${block.content || block.cues}</div>`;
+                }
+
+                if (block.title) {
+                    html += `<div class="flex items-center gap-2 mb-4"><div class="h-px bg-stone-300 flex-1"></div><span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${block.title}</span><div class="h-px bg-stone-300 flex-1"></div></div>`;
+                }
+
+                if (block.arabic) {
+                    html += `<div class="font-arabic text-right leading-loose mb-6 p-4 bg-stone-50 rounded border border-stone-100 ${isPrint ? 'text-xl' : 'text-3xl'}">${block.arabic}</div>`;
+                }
+
+                html += `<div style="font-size: ${fSize}" class="font-serif leading-relaxed text-stone-900 text-justify">`;
+                if(block.greeting) html += `<p class="font-bold text-emerald-800 mb-2">${block.greeting}</p>`;
+                if(block.text) html += `<p>${block.text}</p>`;
+                
+                if(block.dalil) {
+                    html += `<div class="mt-4 p-4 border rounded-xl bg-white border-stone-200">
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded uppercase">Dalil</span>
+                        <p class="font-arabic text-right text-xl mt-2">${block.dalil.arabic}</p>
+                        <p class="text-xs text-amber-700 font-bold mt-2">${block.dalil.source}</p>
+                        <p class="text-sm text-stone-500 italic mt-1">"${block.dalil.meaning}"</p>
+                    </div>`;
+                }
+                html += `</div>`;
+
+                if(block.doa_arabic) {
+                    html += `<div class="mt-8 text-center p-6 rounded-2xl ${isPrint ? 'border-2 border-emerald-900' : 'bg-emerald-900 text-white shadow-xl'}">
+                        <p class="font-arabic text-2xl leading-loose mb-4">${block.doa_arabic}</p>
+                        <p class="font-bold text-amber-400">${block.salam}</p>
+                    </div>`;
+                }
+
+                html += `</div>`;
+            });
+
+            if(isPrint) {
+                html += `<div class="mt-8 pt-4 border-t border-stone-200 text-center text-[10px] text-stone-400 font-mono">Dibuat dengan MimbarPro AI</div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+
+        function updateFont(val) {
+            state.fontSize += val;
+            fontSizeDisplay.textContent = state.fontSize;
+            renderScript();
+        }
+
+        function updatePlayBtn() {
+            const btn = document.getElementById('btn-play');
+            const icon = state.isScrolling ? 'pause' : 'play';
+            btn.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i>`;
+            document.getElementById('on-air').classList.toggle('hidden', !state.isScrolling);
+            lucide.createIcons();
+        }
+
+        // Loop Teleprompter
+        setInterval(() => {
+            if (state.isScrolling && state.scrollSpeed > 0) {
+                scrollArea.scrollTop += state.scrollSpeed;
+            }
+        }, 50);
+
+    </script>
+</body>
+</html>
