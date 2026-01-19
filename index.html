@@ -72,6 +72,15 @@
                 </div>
 
                 <div class="space-y-5">
+                    <!-- KOLOM API KEY (DIKEMBALIKAN) -->
+                    <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                        <label class="flex items-center gap-2 text-xs font-bold text-emerald-800 mb-2 uppercase tracking-wide">
+                            <i data-lucide="key" class="w-3 h-3 text-amber-600"></i> API Key Gemini
+                        </label>
+                        <input id="input-api-key" type="password" class="w-full p-3 border border-emerald-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none bg-white" placeholder="Tempel API Key Gemini (AIza...)">
+                        <p class="text-[10px] text-emerald-600/70 mt-2 italic">*Kunci tidak disimpan di server, aman untuk privasi.</p>
+                    </div>
+
                     <div>
                         <label class="block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide">Topik Kajian</label>
                         <input id="input-topic" type="text" value="Keutamaan Menjaga Lisan" class="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
@@ -211,6 +220,7 @@
         ];
 
         // --- DOM ELEMENTS ---
+        const inputApiKey = document.getElementById('input-api-key');
         const inputTopic = document.getElementById('input-topic');
         const selectPreset = document.getElementById('select-preset');
         const inputAudience = document.getElementById('input-audience');
@@ -315,12 +325,21 @@
         }
 
         async function generateScript() {
+            // Gunakan API Key dari input jika variabel apiKey kosong
+            const finalKey = apiKey || inputApiKey.value;
+            
+            if (!finalKey) {
+                document.getElementById('error-box').classList.remove('hidden');
+                document.getElementById('error-message').textContent = "Mohon masukkan API Key Gemini terlebih dahulu.";
+                return;
+            }
+
             showStep('loading');
             const systemPrompt = `Anda adalah "MimbarPro" asisten pembuat naskah kultum Islami. Buat JSON Array: cues, opening, hook, meat, story, action, closing. JANGAN gunakan tanda bintang (*) untuk formatting. Tulis teks polos saja.`;
             const userQuery = `Topik: ${state.topic}, Audience: ${state.audience}, Durasi: ${state.duration}, Tone: ${state.tone}`;
 
             try {
-                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${finalKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -351,7 +370,6 @@
             
             let html = `<div class="${isPrint ? 'text-black' : ''}">`;
             
-            // Header for Print
             if(isPrint) {
                 html += `<div class="text-center border-b-2 border-emerald-900 pb-4 mb-8">
                     <h1 class="text-3xl font-bold font-serif text-emerald-900">Naskah Kultum Ramadhan</h1>
@@ -420,7 +438,6 @@
             lucide.createIcons();
         }
 
-        // Loop Teleprompter
         setInterval(() => {
             if (state.isScrolling && state.scrollSpeed > 0) {
                 scrollArea.scrollTop += state.scrollSpeed;
