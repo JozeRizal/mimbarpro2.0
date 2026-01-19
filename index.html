@@ -72,7 +72,7 @@
                 </div>
 
                 <div class="space-y-5">
-                    <!-- KOLOM API KEY (DIKEMBALIKAN) -->
+                    <!-- KOLOM API KEY -->
                     <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
                         <label class="flex items-center gap-2 text-xs font-bold text-emerald-800 mb-2 uppercase tracking-wide">
                             <i data-lucide="key" class="w-3 h-3 text-amber-600"></i> API Key Gemini
@@ -197,7 +197,7 @@
 
     <script>
         // --- KONFIGURASI ---
-        const apiKey = ""; // Disediakan oleh runtime
+        const apiKey = ""; // Kunci default jika ada
         const appId = "mimbar-pro-v1";
 
         // --- STATE ---
@@ -216,7 +216,8 @@
             "Keutamaan Bulan Ramadhan: Bulan Penuh Berkah", "Tujuan Utama Puasa: Meraih Derajat Taqwa",
             "Tiga Tingkatan Puasa Menurut Imam Al-Ghazali", "Keutamaan Sahur: Berkah yang Sering Terlewatkan",
             "Menjaga Lisan di Bulan Suci: Puasa Bicara", "Bahaya Ghibah: Memakan Daging Saudara Sendiri",
-            "Lailatul Qadar: Malam Lebih Baik dari Seribu Bulan"
+            "Lailatul Qadar: Malam Lebih Baik dari Seribu Bulan", "Pentingnya Sedekah di Akhir Ramadhan",
+            "Zakat Fitrah: Penyempurna Ibadah Puasa"
         ];
 
         // --- DOM ELEMENTS ---
@@ -289,7 +290,7 @@
             const element = document.getElementById('final-print-area');
             const opt = {
                 margin: 0,
-                filename: `Naskah_MimbarPro_${state.topic.substring(0,10)}.pdf`,
+                filename: `Naskah_MimbarPro_${state.topic.substring(0,15).replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -297,6 +298,9 @@
 
             setTimeout(() => {
                 html2pdf().set(opt).from(element).save().then(() => {
+                    document.getElementById('pdf-overlay').classList.add('hidden');
+                }).catch(err => {
+                    alert("Gagal mengunduh PDF. Silakan coba lagi.");
                     document.getElementById('pdf-overlay').classList.add('hidden');
                 });
             }, 1000);
@@ -316,26 +320,32 @@
                     if (response.ok) return await response.json();
                     if (response.status !== 429 && response.status < 500) {
                         const err = await response.json();
-                        throw new Error(err.error?.message || "Error");
+                        throw new Error(err.error?.message || "Kesalahan pada server AI.");
                     }
-                } catch (e) { if (i === maxRetries - 1) throw e; }
+                } catch (e) { 
+                    if (i === maxRetries - 1) throw e; 
+                }
                 await new Promise(r => setTimeout(r, delay));
                 delay *= 2;
             }
         }
 
         async function generateScript() {
-            // Gunakan API Key dari input jika variabel apiKey kosong
             const finalKey = apiKey || inputApiKey.value;
             
             if (!finalKey) {
-                document.getElementById('error-box').classList.remove('hidden');
+                const errBox = document.getElementById('error-box');
+                errBox.classList.remove('hidden');
                 document.getElementById('error-message').textContent = "Mohon masukkan API Key Gemini terlebih dahulu.";
                 return;
             }
 
             showStep('loading');
-            const systemPrompt = `Anda adalah "MimbarPro" asisten pembuat naskah kultum Islami. Buat JSON Array: cues, opening, hook, meat, story, action, closing. JANGAN gunakan tanda bintang (*) untuk formatting. Tulis teks polos saja.`;
+            const systemPrompt = `Anda adalah "MimbarPro" asisten profesional pembuat naskah kultum Islami. 
+            Buatlah JSON Array yang berisi objek dengan tipe: cues, opening, hook, meat, story, action, closing. 
+            Gunakan kunci 'title', 'arabic', 'greeting', 'text', 'dalil' (objek dengan arabic, source, meaning), 'explanation', 'doa_arabic', 'salam' sesuai konteks.
+            PENTING: JANGAN gunakan tanda bintang (*) atau markdown lainnya. Kembalikan HANYA JSON array murni tanpa teks tambahan apapun.`;
+            
             const userQuery = `Topik: ${state.topic}, Audience: ${state.audience}, Durasi: ${state.duration}, Tone: ${state.tone}`;
 
             try {
@@ -349,13 +359,27 @@
                 });
 
                 let raw = data.candidates[0].content.parts[0].text;
+                
+                // EKSTRAKSI JSON YANG LEBIH KUAT
+                const jsonMatch = raw.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    raw = jsonMatch[0];
+                }
+
                 raw = raw.replace(/```json/g, '').replace(/```/g, '').replace(/\*/g, '').trim();
-                state.script = JSON.parse(raw);
-                renderScript();
-                showStep('result');
+                
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    state.script = parsed;
+                    renderScript();
+                    showStep('result');
+                } else {
+                    throw new Error("Hasil naskah kosong atau tidak valid.");
+                }
             } catch (e) {
-                document.getElementById('error-box').classList.remove('hidden');
-                document.getElementById('error-message').textContent = e.message;
+                const errBox = document.getElementById('error-box');
+                errBox.classList.remove('hidden');
+                document.getElementById('error-message').textContent = "Terjadi kesalahan: " + e.message;
                 showStep('input');
             }
         }
@@ -380,36 +404,45 @@
             state.script.forEach(block => {
                 html += `<div class="mb-8 ${isPrint ? 'page-break-inside-avoid' : ''}">`;
                 
-                if (block.content || block.cues) {
-                    html += `<div class="mb-4 bg-amber-50 border-l-4 border-amber-500 p-2 text-xs font-bold uppercase text-amber-800">💡 ${block.content || block.cues}</div>`;
+                // Visual Cues
+                const cue = block.content || block.cues;
+                if (cue) {
+                    html += `<div class="mb-4 bg-amber-50 border-l-4 border-amber-500 p-2 text-xs font-bold uppercase text-amber-800">💡 ${cue}</div>`;
                 }
 
+                // Title Section
                 if (block.title) {
                     html += `<div class="flex items-center gap-2 mb-4"><div class="h-px bg-stone-300 flex-1"></div><span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${block.title}</span><div class="h-px bg-stone-300 flex-1"></div></div>`;
                 }
 
+                // Arabic Text (Mukadimah/Dalil)
                 if (block.arabic) {
                     html += `<div class="font-arabic text-right leading-loose mb-6 p-4 bg-stone-50 rounded border border-stone-100 ${isPrint ? 'text-xl' : 'text-3xl'}">${block.arabic}</div>`;
                 }
 
+                // Main Content
                 html += `<div style="font-size: ${fSize}" class="font-serif leading-relaxed text-stone-900 text-justify">`;
                 if(block.greeting) html += `<p class="font-bold text-emerald-800 mb-2">${block.greeting}</p>`;
-                if(block.text) html += `<p>${block.text}</p>`;
+                
+                // Fallback for different field names
+                const mainText = block.text || block.content_text || block.explanation;
+                if(mainText && block.type !== 'cues') html += `<p>${mainText}</p>`;
                 
                 if(block.dalil) {
                     html += `<div class="mt-4 p-4 border rounded-xl bg-white border-stone-200">
                         <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded uppercase">Dalil</span>
-                        <p class="font-arabic text-right text-xl mt-2">${block.dalil.arabic}</p>
-                        <p class="text-xs text-amber-700 font-bold mt-2">${block.dalil.source}</p>
-                        <p class="text-sm text-stone-500 italic mt-1">"${block.dalil.meaning}"</p>
+                        <p class="font-arabic text-right text-xl mt-2">${block.dalil.arabic || ''}</p>
+                        <p class="text-xs text-amber-700 font-bold mt-2">${block.dalil.source || ''}</p>
+                        <p class="text-sm text-stone-500 italic mt-1">"${block.dalil.meaning || ''}"</p>
                     </div>`;
                 }
                 html += `</div>`;
 
+                // Closing Area
                 if(block.doa_arabic) {
                     html += `<div class="mt-8 text-center p-6 rounded-2xl ${isPrint ? 'border-2 border-emerald-900' : 'bg-emerald-900 text-white shadow-xl'}">
                         <p class="font-arabic text-2xl leading-loose mb-4">${block.doa_arabic}</p>
-                        <p class="font-bold text-amber-400">${block.salam}</p>
+                        <p class="font-bold text-amber-400">${block.salam || 'Wassalamu\'alaikum Wr. Wb.'}</p>
                     </div>`;
                 }
 
@@ -417,7 +450,7 @@
             });
 
             if(isPrint) {
-                html += `<div class="mt-8 pt-4 border-t border-stone-200 text-center text-[10px] text-stone-400 font-mono">Dibuat dengan MimbarPro AI</div>`;
+                html += `<div class="mt-8 pt-4 border-t border-stone-200 text-center text-[10px] text-stone-400 font-mono">Dibuat secara otomatis dengan MimbarPro AI</div>`;
             }
 
             html += `</div>`;
@@ -426,6 +459,8 @@
 
         function updateFont(val) {
             state.fontSize += val;
+            if(state.fontSize < 16) state.fontSize = 16;
+            if(state.fontSize > 48) state.fontSize = 48;
             fontSizeDisplay.textContent = state.fontSize;
             renderScript();
         }
@@ -440,9 +475,9 @@
 
         setInterval(() => {
             if (state.isScrolling && state.scrollSpeed > 0) {
-                scrollArea.scrollTop += state.scrollSpeed;
+                scrollArea.scrollTop += (state.scrollSpeed * 0.5);
             }
-        }, 50);
+        }, 30);
 
     </script>
 </body>
